@@ -4,20 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spring Cove Mileage Automator</title>
+
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class', // Enables toggle-based dark mode
+            darkMode: 'class',
         }
     </script>
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
         body { font-family: 'Inter', sans-serif; }
         .fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
         .fade-enter-from, .fade-leave-to { opacity: 0; }
-        /* Custom Scrollbar */
+
+        /* Scrollbar Styling */
         .scroller::-webkit-scrollbar { width: 6px; }
         .scroller::-webkit-scrollbar-track { background: transparent; }
         .scroller::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
@@ -29,6 +35,7 @@
 <div id="app" class="flex w-full h-full" :class="{ 'dark': isDarkMode }">
 
     <aside class="w-96 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-20 shadow-xl overflow-y-auto transition-colors duration-300">
+
         <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
             <div class="flex items-center gap-3">
                 <div class="bg-blue-700 text-white p-2 rounded-lg">
@@ -127,8 +134,8 @@
     </aside>
 
     <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-100 dark:bg-slate-900 p-4 sm:p-8 transition-colors duration-300">
-
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex-1 flex flex-col overflow-hidden max-w-6xl mx-auto w-full transition-colors duration-300">
+
             <div class="px-8 py-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-end bg-white dark:bg-slate-800 transition-colors duration-300">
                 <div>
                     <h2 class="text-2xl font-bold text-slate-800 dark:text-white">{{ months[config.month] }} {{ config.year }}</h2>
@@ -209,7 +216,7 @@
     createApp({
         data() {
             return {
-                isDarkMode: localStorage.getItem('mileage_theme') === 'dark',
+                isDarkMode: false,
                 months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
                 user: {
                     name: localStorage.getItem('mileage_name') || '',
@@ -226,7 +233,6 @@
                     to: 'Central High School'
                 },
                 trips: {},
-                // Destination List
                 orderedDestinations: [
                     "Admin Office", "Central High School", "Martinsburg Elem.", "Middle School", "Spring Cove Elem.",
                     "Athletic Field", "Bean Hill", "Giant Eagle", "GACTC",
@@ -235,7 +241,6 @@
                     "FNB - Roaring Spring", "Spring Plaza", "Harrisburg",
                     "Walmart (East Freedom)", "Walmart / Sam's (Altoona)"
                 ],
-                // Master Matrix
                 distances: {
                     "Admin Office": {
                         "Admin Office": 0, "Central High School": 4.5, "Martinsburg Elem.": 4.2, "Middle School": 0.2, "Spring Cove Elem.": 0.1,
@@ -268,6 +273,13 @@
                         "Walmart (East Freedom)": 3.8, "Walmart / Sam's (Altoona)": 12.1
                     }
                 }
+            }
+        },
+        mounted() {
+            // Restore dark mode from local storage
+            const savedTheme = localStorage.getItem('mileage_theme');
+            if (savedTheme === 'dark') {
+                this.isDarkMode = true;
             }
         },
         computed: {
@@ -330,7 +342,9 @@
             'user.building'(val) { localStorage.setItem('mileage_building', val); },
             'user.reason'(val) { localStorage.setItem('mileage_reason', val); },
             'config.month'() { this.trips = {}; },
-            'isDarkMode'(val) { localStorage.setItem('mileage_theme', val ? 'dark' : 'light'); }
+            'isDarkMode'(val) {
+                localStorage.setItem('mileage_theme', val ? 'dark' : 'light');
+            }
         },
         methods: {
             toggleDarkMode() {
@@ -355,10 +369,20 @@
             },
             async generatePDF() {
                 try {
-                    // UPDATED: Now looks for the simpler filename
                     const existingPdfBytes = await fetch('mileageform.pdf').then(res => res.arrayBuffer());
                     const pdfDoc = await PDFDocument.load(existingPdfBytes);
                     const form = pdfDoc.getForm();
+
+                    // --- DEBUG HELPER: Get all real field names ---
+                    const fields = form.getFields();
+                    const allFieldNames = fields.map(f => f.getName());
+
+                    // Helper to find a field loosely (case insensitive, ignoring spaces)
+                    const findField = (search) => {
+                        return allFieldNames.find(n =>
+                            n.toLowerCase().replace(/\s/g, '').includes(search.toLowerCase().replace(/\s/g, ''))
+                        );
+                    };
 
                     // 1. Header Fields
                     try { form.getTextField('NAME').setText(this.user.name); } catch(e){}
@@ -374,19 +398,32 @@
                         const trip = this.trips[day];
                         const dateStr = `${this.config.month + 1}/${day}/${this.config.year}`;
 
+                        // FUZZY MATCHING LOGIC
+                        // We search for fields containing "Row1" and "Date", etc.
                         try {
-                            form.getTextField(`DATE Row${row}`).setText(dateStr);
-                            form.getTextField(`FROM Row${row}`).setText(trip.from);
-                            form.getTextField(`TO Row${row}`).setText(trip.to);
-                            form.getTextField(`MILES In Tenths Row${row}`).setText(trip.distance.toString());
-                            form.getTextField(`PURPOSE  GIVE DETAILS Row${row}`).setText(trip.reason);
-                        } catch (e) { console.warn("Row fill error", e); }
+                            const dateField = findField(`DateRow${row}`) || findField(`Date_Row${row}`);
+                            if (dateField) form.getTextField(dateField).setText(dateStr);
+
+                            const fromField = findField(`FromRow${row}`) || findField(`From_Row${row}`);
+                            if (fromField) form.getTextField(fromField).setText(trip.from);
+
+                            const toField = findField(`ToRow${row}`) || findField(`To_Row${row}`);
+                            if (toField) form.getTextField(toField).setText(trip.to);
+
+                            const milesField = findField(`MilesRow${row}`) || findField(`Miles_Row${row}`) || findField(`TenthsRow${row}`);
+                            if (milesField) form.getTextField(milesField).setText(trip.distance.toString());
+
+                            const purposeField = findField(`PurposeRow${row}`) || findField(`Purpose_Row${row}`) || findField(`DetailsRow${row}`);
+                            if (purposeField) form.getTextField(purposeField).setText(trip.reason);
+
+                        } catch (e) { console.warn(`Row ${row} error:`, e); }
                     });
 
                     // 3. Totals
                     try {
                         const totalDollars = (this.totalMiles * this.config.rate).toFixed(2);
-                        form.getTextField('Total Expenses').setText(`$${totalDollars}`);
+                        const totalField = findField('TotalExpenses') || 'Total Expenses';
+                        form.getTextField(totalField).setText(`$${totalDollars}`);
                     } catch(e) {}
 
                     // 4. Download
@@ -397,7 +434,7 @@
                     link.download = `Mileage_${this.months[this.config.month]}.pdf`;
                     link.click();
                 } catch (e) {
-                    alert("Error! Make sure your PDF is named 'mileageform.pdf' and is in the same folder.");
+                    alert("Error! Check console for details.");
                     console.error(e);
                 }
             }
