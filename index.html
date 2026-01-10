@@ -32,7 +32,7 @@
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 h-screen flex overflow-hidden transition-colors duration-300">
 
-<div id="app" class="flex w-full h-full" :class="{ 'dark': isDarkMode }">
+<div id="app" class="flex w-full h-full">
 
     <aside class="w-96 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-20 shadow-xl overflow-y-auto transition-colors duration-300">
 
@@ -58,7 +58,7 @@
 
             <div>
                 <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Full Name</label>
-                <input v-model="user.name" type="text" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder-slate-400 dark:placeholder-slate-500" placeholder="e.g. Jane Doe">
+                <input v-model="user.name" type="text" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder-slate-400 dark:placeholder-slate-500">
             </div>
 
             <div>
@@ -84,8 +84,7 @@
 
         <div class="p-6 space-y-5 flex-1 bg-blue-50/30 dark:bg-blue-900/10">
             <div class="flex items-center justify-between">
-                <h3 class="text-xs font-bold text-blue-800 dark:text-blue-400 uppercase tracking-wider">Active Route Selection</h3>
-                <span class="text-[10px] bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-medium">Ready to Assign</span>
+                <h3 class="text-xs font-bold text-blue-800 dark:text-blue-400 uppercase tracking-wider">Select Travel</h3>
             </div>
 
             <div class="space-y-4">
@@ -116,7 +115,7 @@
 
             <div class="mt-4">
                 <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Reason for Travel</label>
-                <textarea v-model="user.reason" rows="2" class="w-full bg-white dark:bg-slate-700 border border-blue-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none resize-none shadow-sm placeholder-slate-400 dark:placeholder-slate-500" placeholder="e.g. Itinerant Services"></textarea>
+                <textarea v-model="user.reason" rows="2" class="w-full bg-white dark:bg-slate-700 border border-blue-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none resize-none shadow-sm placeholder-slate-400 dark:placeholder-slate-500" placeholder="e.g. Itinerant Teacher"></textarea>
             </div>
 
             <div class="mt-2 pt-4 border-t border-blue-100 dark:border-slate-700">
@@ -221,7 +220,7 @@
                 user: {
                     name: localStorage.getItem('mileage_name') || '',
                     building: localStorage.getItem('mileage_building') || 'Admin Office',
-                    reason: localStorage.getItem('mileage_reason') || 'Itinerant Services'
+                    reason: localStorage.getItem('mileage_reason') || '' // Set default to blank
                 },
                 config: {
                     year: 2026,
@@ -276,9 +275,13 @@
             }
         },
         mounted() {
+            // Restore dark mode AND set it immediately
             const savedTheme = localStorage.getItem('mileage_theme');
             if (savedTheme === 'dark') {
                 this.isDarkMode = true;
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
             }
         },
         computed: {
@@ -293,35 +296,46 @@
             },
             daysInMonth() { return new Date(this.config.year, this.config.month + 1, 0).getDate(); },
             startDayOffset() { return new Date(this.config.year, this.config.month, 1).getDay(); },
+
             currentMonthHolidays() {
                 const year = this.config.year;
                 const month = this.config.month;
                 const holidays = {};
+
                 const getNthWeekday = (n, weekday, m, y) => {
                     let date = new Date(y, m, 1);
                     let count = 0;
                     while (date.getMonth() === m) {
-                        if (date.getDay() === weekday) { count++; if (count === n) return date.getDate(); }
+                        if (date.getDay() === weekday) {
+                            count++;
+                            if (count === n) return date.getDate();
+                        }
                         date.setDate(date.getDate() + 1);
                     }
                     return null;
                 };
+
                 const getLastWeekday = (weekday, m, y) => {
                     let date = new Date(y, m + 1, 0);
-                    while (date.getDay() !== weekday) { date.setDate(date.getDate() - 1); }
+                    while (date.getDay() !== weekday) {
+                        date.setDate(date.getDate() - 1);
+                    }
                     return date.getDate();
                 };
+
                 if (month === 0) holidays[1] = "New Year's";
                 if (month === 5) holidays[19] = "Juneteenth";
                 if (month === 6) holidays[4] = "Independence Day";
                 if (month === 10) holidays[11] = "Veterans Day";
                 if (month === 11) holidays[25] = "Christmas";
+
                 if (month === 0) holidays[getNthWeekday(3, 1, 0, year)] = "MLK Day";
                 if (month === 1) holidays[getNthWeekday(3, 1, 1, year)] = "Presidents' Day";
                 if (month === 4) holidays[getLastWeekday(1, 4, year)] = "Memorial Day";
                 if (month === 8) holidays[getNthWeekday(1, 1, 8, year)] = "Labor Day";
                 if (month === 9) holidays[getNthWeekday(2, 1, 9, year)] = "Columbus Day";
                 if (month === 10) holidays[getNthWeekday(4, 4, 10, year)] = "Thanksgiving";
+
                 return holidays;
             }
         },
@@ -330,13 +344,27 @@
             'user.building'(val) { localStorage.setItem('mileage_building', val); },
             'user.reason'(val) { localStorage.setItem('mileage_reason', val); },
             'config.month'() { this.trips = {}; },
-            'isDarkMode'(val) { localStorage.setItem('mileage_theme', val ? 'dark' : 'light'); }
+            'isDarkMode'(val) {
+                localStorage.setItem('mileage_theme', val ? 'dark' : 'light');
+                // Toggle the class on the ROOT HTML element
+                if (val) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
         },
         methods: {
-            toggleDarkMode() { this.isDarkMode = !this.isDarkMode; },
-            isHoliday(day) { return this.currentMonthHolidays[day] || false; },
+            toggleDarkMode() {
+                this.isDarkMode = !this.isDarkMode;
+            },
+            isHoliday(day) {
+                return this.currentMonthHolidays[day] || false;
+            },
             toggleDate(day) {
-                if (this.trips[day] && this.trips[day].from === this.route.from && this.trips[day].to === this.route.to) {
+                if (this.trips[day] &&
+                    this.trips[day].from === this.route.from &&
+                    this.trips[day].to === this.route.to) {
                     delete this.trips[day];
                 } else {
                     this.trips[day] = {
@@ -353,7 +381,6 @@
                     const pdfDoc = await PDFDocument.load(existingPdfBytes);
                     const form = pdfDoc.getForm();
 
-                    // --- DEBUG: Print all fields to Console ---
                     const fields = form.getFields();
                     const allFieldNames = fields.map(f => f.getName());
                     console.log("PDF FIELDS FOUND:", allFieldNames);
@@ -370,10 +397,10 @@
                     try { form.getTextField('MONTH').setText(this.months[this.config.month]); } catch(e){}
                     try { form.getTextField('YEAR').setText(this.config.year.toString()); } catch(e){}
 
-                    // 2. Rows - FIXED: NOW ALLOWS UP TO 24 ROWS
+                    // 2. Rows
                     const sortedDays = Object.keys(this.trips).map(Number).sort((a, b) => a - b);
 
-                    // CHANGED LIMIT TO 24
+                    // Allow up to 24 rows
                     sortedDays.slice(0, 24).forEach((day, index) => {
                         const row = index + 1;
                         const trip = this.trips[day];
