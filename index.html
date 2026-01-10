@@ -353,42 +353,66 @@
                     const pdfDoc = await PDFDocument.load(existingPdfBytes);
                     const form = pdfDoc.getForm();
 
-                    // --- HEADERS (Based on typical fields or previous assumption) ---
+                    // --- DEBUG: Print all fields to Console ---
+                    const fields = form.getFields();
+                    const allFieldNames = fields.map(f => f.getName());
+                    console.log("PDF FIELDS FOUND:", allFieldNames);
+
+                    const findField = (search) => {
+                        return allFieldNames.find(n =>
+                            n.toLowerCase().replace(/\s/g, '').includes(search.toLowerCase().replace(/\s/g, ''))
+                        );
+                    };
+
+                    // 1. Header Fields
                     try { form.getTextField('NAME').setText(this.user.name); } catch(e){}
                     try { form.getTextField('BUILDING').setText(this.user.building); } catch(e){}
                     try { form.getTextField('MONTH').setText(this.months[this.config.month]); } catch(e){}
                     try { form.getTextField('YEAR').setText(this.config.year.toString()); } catch(e){}
 
-                    // --- ROWS (USING EXACT NAMES FROM YOUR DUMP) ---
+                    // 2. Rows - FIXED: NOW ALLOWS UP TO 24 ROWS
                     const sortedDays = Object.keys(this.trips).map(Number).sort((a, b) => a - b);
 
-                    sortedDays.slice(0, 12).forEach((day, index) => {
+                    // CHANGED LIMIT TO 24
+                    sortedDays.slice(0, 24).forEach((day, index) => {
                         const row = index + 1;
                         const trip = this.trips[day];
                         const dateStr = `${this.config.month + 1}/${day}/${this.config.year}`;
 
                         try {
-                            // Exact names from your pdftk dump
-                            form.getTextField(`DATERow${row}`).setText(dateStr);
-                            form.getTextField(`FROMRow${row}`).setText(trip.from);
-                            form.getTextField(`TORow${row}`).setText(trip.to);
-                            form.getTextField(`MILES In TenthsRow${row}`).setText(trip.distance.toString());
-                            form.getTextField(`PURPOSE  GIVE DETAILSRow${row}`).setText(trip.reason);
-                        } catch (e) {
-                            console.warn(`Row ${row} fill error:`, e);
-                        }
+                            const dateField = findField(`DateRow${row}`) || findField(`Date_Row${row}`);
+                            if (dateField) form.getTextField(dateField).setText(dateStr);
+
+                            const fromField = findField(`FromRow${row}`) || findField(`From_Row${row}`);
+                            if (fromField) form.getTextField(fromField).setText(trip.from);
+
+                            const toField = findField(`ToRow${row}`) || findField(`To_Row${row}`);
+                            if (toField) form.getTextField(toField).setText(trip.to);
+
+                            const milesField = findField(`MilesRow${row}`) || findField(`Miles_Row${row}`) || findField(`TenthsRow${row}`) || findField(`Miles In TenthsRow${row}`);
+                            if (milesField) form.getTextField(milesField).setText(trip.distance.toString());
+
+                            const purposeField = findField(`PurposeRow${row}`) || findField(`Purpose_Row${row}`) || findField(`DetailsRow${row}`) || findField(`PURPOSE  GIVE DETAILSRow${row}`);
+                            if (purposeField) form.getTextField(purposeField).setText(trip.reason);
+
+                        } catch (e) { console.warn(`Row ${row} error:`, e); }
                     });
 
-                    // --- TOTALS (USING EXACT NAMES FROM YOUR DUMP) ---
+                    // 3. Totals Area
                     try {
+                        const totalMilesField = findField('TotalMiles') || findField('MilesTotal') || findField('Total_Miles') || findField('TOTAL_MILES');
+                        if (totalMilesField) form.getTextField(totalMilesField).setText(this.totalMiles.toFixed(1));
+
+                        const rateField = findField('Rate') || findField('IRSRate');
+                        if (rateField) form.getTextField(rateField).setText(this.config.rate.toString());
+
                         const totalDollars = (this.totalMiles * this.config.rate).toFixed(2);
+                        const totalExpenseField = findField('TotalExpenses') || findField('Expenses') || findField('TotalAmount') || findField('TOTAL_EXPENSES');
+                        if (totalExpenseField) form.getTextField(totalExpenseField).setText(`$${totalDollars}`);
 
-                        form.getTextField('TOTAL_MILES').setText(this.totalMiles.toFixed(1));
-                        form.getTextField('IRSRATE').setText(this.config.rate.toString());
-                        form.getTextField('TOTAL_EXPENSES').setText(`$${totalDollars}`);
-                    } catch(e) { console.warn("Totals fill error:", e); }
+                    } catch(e) { console.warn("Totals error:", e); }
 
-                    // --- DOWNLOAD ---
+                    // 4. Download
                     const pdfBytes = await pdfDoc.save();
                     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
                     const link = document.createElement('a');
@@ -396,7 +420,7 @@
                     link.download = `Mileage_${this.months[this.config.month]}.pdf`;
                     link.click();
                 } catch (e) {
-                    alert("Error generating PDF. Check console for details.");
+                    alert("Error! Check console for details.");
                     console.error(e);
                 }
             }
