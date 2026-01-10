@@ -1,3 +1,17 @@
+This is perfect. That dump reveals exactly why the previous code failed.
+
+**The Problem:**
+The previous code was looking for simple names like `MilesRow1`.
+The **Actual** names are much more specific, like `MILES In TenthsRow1` and `PURPOSE  GIVE DETAILSRow1` (with two spaces!). Because the names didn't match exactly, the PDF filler skipped them.
+
+**The Fix:**
+I have updated the `index.html` below to use the **exact** field names found in your analysis.
+
+### `index.html` (Corrected Field Names)
+
+Replace your entire `index.html` file with this code.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -276,7 +290,6 @@
             }
         },
         mounted() {
-            // Restore dark mode from local storage
             const savedTheme = localStorage.getItem('mileage_theme');
             if (savedTheme === 'dark') {
                 this.isDarkMode = true;
@@ -294,46 +307,35 @@
             },
             daysInMonth() { return new Date(this.config.year, this.config.month + 1, 0).getDate(); },
             startDayOffset() { return new Date(this.config.year, this.config.month, 1).getDay(); },
-
             currentMonthHolidays() {
                 const year = this.config.year;
                 const month = this.config.month;
                 const holidays = {};
-
                 const getNthWeekday = (n, weekday, m, y) => {
                     let date = new Date(y, m, 1);
                     let count = 0;
                     while (date.getMonth() === m) {
-                        if (date.getDay() === weekday) {
-                            count++;
-                            if (count === n) return date.getDate();
-                        }
+                        if (date.getDay() === weekday) { count++; if (count === n) return date.getDate(); }
                         date.setDate(date.getDate() + 1);
                     }
                     return null;
                 };
-
                 const getLastWeekday = (weekday, m, y) => {
                     let date = new Date(y, m + 1, 0);
-                    while (date.getDay() !== weekday) {
-                        date.setDate(date.getDate() - 1);
-                    }
+                    while (date.getDay() !== weekday) { date.setDate(date.getDate() - 1); }
                     return date.getDate();
                 };
-
                 if (month === 0) holidays[1] = "New Year's";
                 if (month === 5) holidays[19] = "Juneteenth";
                 if (month === 6) holidays[4] = "Independence Day";
                 if (month === 10) holidays[11] = "Veterans Day";
                 if (month === 11) holidays[25] = "Christmas";
-
                 if (month === 0) holidays[getNthWeekday(3, 1, 0, year)] = "MLK Day";
                 if (month === 1) holidays[getNthWeekday(3, 1, 1, year)] = "Presidents' Day";
                 if (month === 4) holidays[getLastWeekday(1, 4, year)] = "Memorial Day";
                 if (month === 8) holidays[getNthWeekday(1, 1, 8, year)] = "Labor Day";
                 if (month === 9) holidays[getNthWeekday(2, 1, 9, year)] = "Columbus Day";
                 if (month === 10) holidays[getNthWeekday(4, 4, 10, year)] = "Thanksgiving";
-
                 return holidays;
             }
         },
@@ -342,21 +344,13 @@
             'user.building'(val) { localStorage.setItem('mileage_building', val); },
             'user.reason'(val) { localStorage.setItem('mileage_reason', val); },
             'config.month'() { this.trips = {}; },
-            'isDarkMode'(val) {
-                localStorage.setItem('mileage_theme', val ? 'dark' : 'light');
-            }
+            'isDarkMode'(val) { localStorage.setItem('mileage_theme', val ? 'dark' : 'light'); }
         },
         methods: {
-            toggleDarkMode() {
-                this.isDarkMode = !this.isDarkMode;
-            },
-            isHoliday(day) {
-                return this.currentMonthHolidays[day] || false;
-            },
+            toggleDarkMode() { this.isDarkMode = !this.isDarkMode; },
+            isHoliday(day) { return this.currentMonthHolidays[day] || false; },
             toggleDate(day) {
-                if (this.trips[day] &&
-                    this.trips[day].from === this.route.from &&
-                    this.trips[day].to === this.route.to) {
+                if (this.trips[day] && this.trips[day].from === this.route.from && this.trips[day].to === this.route.to) {
                     delete this.trips[day];
                 } else {
                     this.trips[day] = {
@@ -373,24 +367,13 @@
                     const pdfDoc = await PDFDocument.load(existingPdfBytes);
                     const form = pdfDoc.getForm();
 
-                    // --- DEBUG HELPER: Get all real field names ---
-                    const fields = form.getFields();
-                    const allFieldNames = fields.map(f => f.getName());
-
-                    // Helper to find a field loosely (case insensitive, ignoring spaces)
-                    const findField = (search) => {
-                        return allFieldNames.find(n =>
-                            n.toLowerCase().replace(/\s/g, '').includes(search.toLowerCase().replace(/\s/g, ''))
-                        );
-                    };
-
-                    // 1. Header Fields
+                    // --- HEADERS (Based on typical fields or previous assumption) ---
                     try { form.getTextField('NAME').setText(this.user.name); } catch(e){}
                     try { form.getTextField('BUILDING').setText(this.user.building); } catch(e){}
                     try { form.getTextField('MONTH').setText(this.months[this.config.month]); } catch(e){}
                     try { form.getTextField('YEAR').setText(this.config.year.toString()); } catch(e){}
 
-                    // 2. Rows
+                    // --- ROWS (USING EXACT NAMES FROM YOUR DUMP) ---
                     const sortedDays = Object.keys(this.trips).map(Number).sort((a, b) => a - b);
 
                     sortedDays.slice(0, 12).forEach((day, index) => {
@@ -398,35 +381,28 @@
                         const trip = this.trips[day];
                         const dateStr = `${this.config.month + 1}/${day}/${this.config.year}`;
 
-                        // FUZZY MATCHING LOGIC
-                        // We search for fields containing "Row1" and "Date", etc.
                         try {
-                            const dateField = findField(`DateRow${row}`) || findField(`Date_Row${row}`);
-                            if (dateField) form.getTextField(dateField).setText(dateStr);
-
-                            const fromField = findField(`FromRow${row}`) || findField(`From_Row${row}`);
-                            if (fromField) form.getTextField(fromField).setText(trip.from);
-
-                            const toField = findField(`ToRow${row}`) || findField(`To_Row${row}`);
-                            if (toField) form.getTextField(toField).setText(trip.to);
-
-                            const milesField = findField(`MilesRow${row}`) || findField(`Miles_Row${row}`) || findField(`TenthsRow${row}`);
-                            if (milesField) form.getTextField(milesField).setText(trip.distance.toString());
-
-                            const purposeField = findField(`PurposeRow${row}`) || findField(`Purpose_Row${row}`) || findField(`DetailsRow${row}`);
-                            if (purposeField) form.getTextField(purposeField).setText(trip.reason);
-
-                        } catch (e) { console.warn(`Row ${row} error:`, e); }
+                            // Exact names from your pdftk dump
+                            form.getTextField(`DATERow${row}`).setText(dateStr);
+                            form.getTextField(`FROMRow${row}`).setText(trip.from);
+                            form.getTextField(`TORow${row}`).setText(trip.to);
+                            form.getTextField(`MILES In TenthsRow${row}`).setText(trip.distance.toString());
+                            form.getTextField(`PURPOSE  GIVE DETAILSRow${row}`).setText(trip.reason);
+                        } catch (e) {
+                            console.warn(`Row ${row} fill error:`, e);
+                        }
                     });
 
-                    // 3. Totals
+                    // --- TOTALS (USING EXACT NAMES FROM YOUR DUMP) ---
                     try {
                         const totalDollars = (this.totalMiles * this.config.rate).toFixed(2);
-                        const totalField = findField('TotalExpenses') || 'Total Expenses';
-                        form.getTextField(totalField).setText(`$${totalDollars}`);
-                    } catch(e) {}
 
-                    // 4. Download
+                        form.getTextField('TOTAL_MILES').setText(this.totalMiles.toFixed(1));
+                        form.getTextField('IRSRATE').setText(this.config.rate.toString());
+                        form.getTextField('TOTAL_EXPENSES').setText(`$${totalDollars}`);
+                    } catch(e) { console.warn("Totals fill error:", e); }
+
+                    // --- DOWNLOAD ---
                     const pdfBytes = await pdfDoc.save();
                     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
                     const link = document.createElement('a');
@@ -434,7 +410,7 @@
                     link.download = `Mileage_${this.months[this.config.month]}.pdf`;
                     link.click();
                 } catch (e) {
-                    alert("Error! Check console for details.");
+                    alert("Error generating PDF. Check console for details.");
                     console.error(e);
                 }
             }
@@ -443,3 +419,5 @@
 </script>
 </body>
 </html>
+
+```
