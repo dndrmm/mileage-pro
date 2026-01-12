@@ -22,15 +22,23 @@
         body { font-family: 'Inter', sans-serif; }
         .fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
         .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+        /* Custom Scrollbar */
+        .scroller::-webkit-scrollbar { width: 8px; height: 8px; }
+        .scroller::-webkit-scrollbar-track { background: transparent; }
+        .scroller::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+        .scroller::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+        .dark .scroller::-webkit-scrollbar-thumb { background-color: #475569; }
+        .dark .scroller::-webkit-scrollbar-thumb:hover { background-color: #64748b; }
     </style>
 </head>
-<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-300">
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 md:h-screen md:overflow-hidden transition-colors duration-300">
 
-<div id="app" class="flex flex-col md:flex-row min-h-screen">
+<div id="app" class="flex flex-col md:flex-row h-full">
 
-    <aside class="w-full md:w-96 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col shadow-xl z-20 md:h-screen md:sticky md:top-0 md:overflow-y-auto transition-colors duration-300">
+    <aside class="w-full md:w-80 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col shadow-xl z-20 md:h-full md:overflow-y-auto scroller">
 
-        <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center flex-none">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
             <div class="flex items-center gap-3">
                 <div class="bg-blue-700 text-white p-2 rounded-lg">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -47,7 +55,7 @@
             </button>
         </div>
 
-        <div class="p-6 space-y-5 border-b border-slate-100 dark:border-slate-700 flex-none">
+        <div class="p-5 space-y-4 border-b border-slate-100 dark:border-slate-700">
             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Employee Details</h3>
 
             <div>
@@ -76,12 +84,15 @@
             </div>
         </div>
 
-        <div class="p-6 space-y-5 bg-blue-50/30 dark:bg-blue-900/10 flex-none">
+        <div class="p-5 space-y-4 bg-blue-50/30 dark:bg-blue-900/10">
             <div class="flex items-center justify-between">
                 <h3 class="text-xs font-bold text-blue-800 dark:text-blue-400 uppercase tracking-wider">Select Travel</h3>
+                <button @click="swapLocations" class="text-xs bg-white dark:bg-slate-700 border border-blue-200 dark:border-slate-600 rounded px-2 py-1 text-blue-600 dark:text-blue-300 hover:text-blue-800 transition-colors shadow-sm" title="Swap From/To">
+                    Swap ⇅
+                </button>
             </div>
 
-            <div class="space-y-4">
+            <div class="space-y-3">
                 <div class="relative group">
                     <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Departure</label>
                     <select v-model="route.from" class="w-full bg-white dark:bg-slate-700 border border-blue-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
@@ -97,7 +108,7 @@
                 </div>
             </div>
 
-            <div class="bg-white dark:bg-slate-800 border border-blue-100 dark:border-slate-600 rounded-xl p-4 flex items-center justify-between mt-4 shadow-sm">
+            <div class="bg-white dark:bg-slate-800 border border-blue-100 dark:border-slate-600 rounded-xl p-3 flex items-center justify-between mt-2 shadow-sm">
                 <div>
                     <span class="block text-xs font-bold text-blue-800 dark:text-blue-400 uppercase">Trip Distance</span>
                 </div>
@@ -107,96 +118,116 @@
                 </div>
             </div>
 
-            <div class="mt-4">
+            <div class="mt-2">
                 <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Reason for Travel</label>
                 <textarea v-model="user.reason" rows="2" class="w-full bg-white dark:bg-slate-700 border border-blue-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none resize-none shadow-sm placeholder-slate-400 dark:placeholder-slate-500" placeholder="e.g. Itinerant Teacher"></textarea>
             </div>
 
-            <div class="mt-2 pt-4 border-t border-blue-100 dark:border-slate-700">
+            <div class="mt-2 pt-3 border-t border-blue-100 dark:border-slate-700">
                 <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">IRS Rate ($)</label>
                 <input v-model.number="config.rate" type="number" step="0.001" class="w-24 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 text-xs text-slate-800 dark:text-white outline-none">
             </div>
         </div>
 
-        <div class="p-6 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 z-10 transition-colors duration-300 flex-none">
+        <div class="p-5 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 z-10 transition-colors duration-300">
             <button @click="generatePDF" class="w-full bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg shadow-lg shadow-blue-200 dark:shadow-none transition-all flex items-center justify-center gap-2 group">
-                <span>Generate PDF</span>
+                <span v-if="totalTripCount > 24">Download {{ Math.ceil(totalTripCount / 24) }} PDF Files</span>
+                <span v-else>Generate PDF</span>
                 <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </button>
         </div>
     </aside>
 
-    <main class="flex-1 p-4 sm:p-8 transition-colors duration-300">
+    <main class="flex-1 bg-slate-100 dark:bg-slate-900 p-4 sm:p-8 transition-colors duration-300 md:h-full md:overflow-y-auto scroller">
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 max-w-6xl mx-auto w-full transition-colors duration-300">
 
-            <div class="px-8 py-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-end bg-white dark:bg-slate-800 rounded-t-2xl transition-colors duration-300">
-                <div>
-                    <h2 class="text-2xl font-bold text-slate-800 dark:text-white">{{ months[config.month] }} {{ config.year }}</h2>
-                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Click dates below to add this specific trip ({{ currentDistance }} mi).</p>
-                </div>
-                <div class="text-right hidden sm:block">
-                    <div class="text-3xl font-bold text-slate-900 dark:text-white">{{ Object.keys(trips).length }}</div>
-                    <div class="text-xs font-medium text-slate-400 uppercase tracking-wide">Days Logged</div>
+            <div class="px-8 py-6 border-b border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-t-2xl transition-colors duration-300 sticky top-0 z-10 shadow-sm">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800 dark:text-white">{{ months[config.month] }} {{ config.year }}</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                            Click a date to add the active trip. Click a trip to remove it.
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-6 md:gap-8 bg-slate-50 dark:bg-slate-900/50 px-4 py-2 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <div class="text-right">
+                            <div class="text-xs font-medium text-slate-400 uppercase tracking-wide">Total Miles</div>
+                            <div class="text-xl font-bold text-slate-800 dark:text-white">{{ totalMiles.toFixed(1) }} <span class="text-sm font-normal text-slate-400">mi</span></div>
+                        </div>
+
+                        <div class="w-px h-8 bg-slate-200 dark:bg-slate-600"></div>
+
+                        <div class="text-right">
+                            <div class="text-xs font-medium text-slate-400 uppercase tracking-wide">Reimbursement</div>
+                            <div class="text-xl font-bold text-green-600 dark:text-green-400">${{ (totalMiles * config.rate).toFixed(2) }}</div>
+                        </div>
+
+                        <div class="w-px h-8 bg-slate-200 dark:bg-slate-600"></div>
+
+                        <div class="text-right">
+                            <div class="text-xs font-medium text-slate-400 uppercase tracking-wide">Trips</div>
+                            <div class="text-xl font-bold text-blue-600 dark:text-blue-400">{{ totalTripCount }}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="p-8 bg-slate-50/30 dark:bg-slate-900/30">
+            <div class="p-8 bg-slate-50/30 dark:bg-slate-900/30 rounded-b-2xl">
                 <div class="grid grid-cols-7 mb-4">
                     <div v-for="day in ['SUN','MON','TUE','WED','THU','FRI','SAT']" class="text-center text-xs font-bold text-slate-400 tracking-widest">
                         {{ day }}
                     </div>
                 </div>
 
-                <div class="grid grid-cols-7 gap-3 sm:gap-4">
-                    <div v-for="blank in startDayOffset" :key="'blank-' + blank" class="aspect-[1/1] sm:aspect-[4/3]"></div>
+                <div class="grid grid-cols-7 gap-3 sm:gap-4 auto-rows-fr">
+                    <div v-for="blank in startDayOffset" :key="'blank-' + blank" class="min-h-[80px]"></div>
 
-                    <button
+                    <div
                         v-for="day in daysInMonth"
                         :key="day"
-                        @click="toggleDate(day)"
-                        class="relative rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-between p-2 group overflow-hidden"
+                        @click="addTrip(day)"
+                        class="relative rounded-xl border-2 transition-all duration-200 flex flex-col items-stretch justify-start p-1.5 group overflow-hidden cursor-pointer min-h-[80px]"
                         :class="[
-                            trips[day]
-                                ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                            hasTrips(day)
+                                ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50 dark:bg-blue-900/10'
                                 : 'border-transparent dark:border-slate-700 bg-white dark:bg-slate-700/50 hover:border-blue-300 dark:hover:border-slate-500 text-slate-400 dark:text-slate-500',
-                            isHoliday(day) && !trips[day] ? 'bg-red-50/50 dark:bg-red-900/10' : ''
+                            isHoliday(day) && !hasTrips(day) ? 'bg-red-50/50 dark:bg-red-900/10' : ''
                         ]"
                     >
-                        <div class="flex justify-between w-full items-start">
-                            <span class="text-lg font-semibold" :class="trips[day] ? 'text-blue-700 dark:text-blue-300' : ''">{{ day }}</span>
+                        <div class="flex justify-between w-full items-start mb-1 px-1">
+                            <span class="text-lg font-semibold" :class="hasTrips(day) ? 'text-blue-700 dark:text-blue-300' : ''">{{ day }}</span>
                             <span v-if="isHoliday(day)" class="text-[9px] font-bold text-red-500 dark:text-red-300 bg-red-100 dark:bg-red-900/40 px-1.5 py-0.5 rounded leading-tight text-right max-w-[70%] truncate">
                                 {{ isHoliday(day) }}
                             </span>
                         </div>
 
-                        <div v-if="trips[day]" class="w-full mt-1">
-                            <div class="text-[10px] font-bold text-blue-600 dark:text-blue-200 bg-white/80 dark:bg-blue-900/50 rounded px-1.5 py-0.5 truncate border border-blue-100 dark:border-blue-800 shadow-sm mb-0.5">
-                                {{ trips[day].distance }} mi
-                            </div>
-                             <div class="text-[9px] text-blue-500 dark:text-blue-300 truncate leading-tight px-0.5">
-                                to {{ trips[day].to }}
+                        <div class="flex flex-col gap-1 w-full">
+                            <div
+                                v-for="(trip, index) in (trips[day] || [])"
+                                :key="index"
+                                @click.stop="removeTrip(day, index)"
+                                class="bg-white/80 dark:bg-slate-800/80 border border-blue-100 dark:border-slate-600 rounded px-1.5 py-1 text-[9px] text-blue-600 dark:text-blue-300 shadow-sm transition-all cursor-pointer group/pill
+                                       hover:bg-red-100 dark:hover:bg-red-900/50 hover:border-red-300 dark:hover:border-red-700 hover:text-red-700 dark:hover:text-red-300 hover:shadow-md"
+                                title="Click to remove this trip"
+                            >
+                                <div class="font-bold flex justify-between">
+                                    <span>{{ trip.distance }} mi</span>
+                                    <span class="text-red-500 opacity-0 group-hover/pill:opacity-100 font-bold">✕</span>
+                                </div>
+                                <div class="truncate leading-tight opacity-75 group-hover/pill:opacity-100">
+                                    {{ trip.from }} ➝ {{ trip.to }}
+                                </div>
                             </div>
                         </div>
 
-                        <div v-else class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
-                            <span class="text-xs font-bold text-blue-300 dark:text-slate-400">+{{ currentDistance }}</span>
+                        <div v-if="!hasTrips(day)" class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                            <span class="text-xs font-bold text-blue-300 dark:text-slate-400">+ Add</span>
                         </div>
-                    </button>
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-white dark:bg-slate-800 px-8 py-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)] z-10 rounded-b-2xl transition-colors duration-300">
-                <div class="text-xs text-slate-400 hidden sm:block">
-                    Holidays in red. Calculated at ${{ config.rate }}/mile.
-                </div>
-                <div class="flex items-baseline gap-2 w-full sm:w-auto justify-end">
-                    <span class="text-sm text-slate-500 dark:text-slate-400">Total:</span>
-                    <span class="text-xl font-bold text-slate-800 dark:text-white">{{ totalMiles.toFixed(1) }}</span>
-                    <span class="text-sm text-slate-500 dark:text-slate-400">miles</span>
-                    <span class="mx-2 text-slate-300 dark:text-slate-600">|</span>
-                    <span class="text-xl font-bold text-green-600 dark:text-green-400">${{ (totalMiles * config.rate).toFixed(2) }}</span>
-                </div>
-            </div>
         </div>
     </main>
 
@@ -208,6 +239,9 @@
 
     createApp({
         data() {
+            // AUTOMATIC DATE SETTING
+            const now = new Date();
+
             return {
                 isDarkMode: false,
                 months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
@@ -217,8 +251,8 @@
                     reason: localStorage.getItem('mileage_reason') || ''
                 },
                 config: {
-                    year: 2026,
-                    month: 0,
+                    year: now.getFullYear(), // Auto-set year
+                    month: now.getMonth(),   // Auto-set month
                     rate: 0.725
                 },
                 route: {
@@ -285,51 +319,50 @@
                 if (fromRow && fromRow[this.route.to] !== undefined) return fromRow[this.route.to];
                 return 0;
             },
+            allTripsList() {
+                let all = [];
+                Object.values(this.trips).forEach(dayList => {
+                    if(Array.isArray(dayList)) {
+                        all = all.concat(dayList);
+                    }
+                });
+                return all;
+            },
+            totalTripCount() { return this.allTripsList.length; },
             totalMiles() {
-                return Object.values(this.trips).reduce((acc, trip) => acc + trip.distance, 0);
+                return this.allTripsList.reduce((acc, trip) => acc + trip.distance, 0);
             },
             daysInMonth() { return new Date(this.config.year, this.config.month + 1, 0).getDate(); },
             startDayOffset() { return new Date(this.config.year, this.config.month, 1).getDay(); },
-
             currentMonthHolidays() {
                 const year = this.config.year;
                 const month = this.config.month;
                 const holidays = {};
-
                 const getNthWeekday = (n, weekday, m, y) => {
                     let date = new Date(y, m, 1);
                     let count = 0;
                     while (date.getMonth() === m) {
-                        if (date.getDay() === weekday) {
-                            count++;
-                            if (count === n) return date.getDate();
-                        }
+                        if (date.getDay() === weekday) { count++; if (count === n) return date.getDate(); }
                         date.setDate(date.getDate() + 1);
                     }
                     return null;
                 };
-
                 const getLastWeekday = (weekday, m, y) => {
                     let date = new Date(y, m + 1, 0);
-                    while (date.getDay() !== weekday) {
-                        date.setDate(date.getDate() - 1);
-                    }
+                    while (date.getDay() !== weekday) { date.setDate(date.getDate() - 1); }
                     return date.getDate();
                 };
-
                 if (month === 0) holidays[1] = "New Year's";
                 if (month === 5) holidays[19] = "Juneteenth";
                 if (month === 6) holidays[4] = "Independence Day";
                 if (month === 10) holidays[11] = "Veterans Day";
                 if (month === 11) holidays[25] = "Christmas";
-
                 if (month === 0) holidays[getNthWeekday(3, 1, 0, year)] = "MLK Day";
                 if (month === 1) holidays[getNthWeekday(3, 1, 1, year)] = "Presidents' Day";
                 if (month === 4) holidays[getLastWeekday(1, 4, year)] = "Memorial Day";
                 if (month === 8) holidays[getNthWeekday(1, 1, 8, year)] = "Labor Day";
                 if (month === 9) holidays[getNthWeekday(2, 1, 9, year)] = "Columbus Day";
                 if (month === 10) holidays[getNthWeekday(4, 4, 10, year)] = "Thanksgiving";
-
                 return holidays;
             }
         },
@@ -340,112 +373,130 @@
             'config.month'() { this.trips = {}; },
             'isDarkMode'(val) {
                 localStorage.setItem('mileage_theme', val ? 'dark' : 'light');
-                // Toggle the class on the ROOT HTML element
-                if (val) {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                }
+                if (val) { document.documentElement.classList.add('dark'); }
+                else { document.documentElement.classList.remove('dark'); }
             }
         },
         methods: {
-            toggleDarkMode() {
-                this.isDarkMode = !this.isDarkMode;
+            toggleDarkMode() { this.isDarkMode = !this.isDarkMode; },
+            isHoliday(day) { return this.currentMonthHolidays[day] || false; },
+            hasTrips(day) { return this.trips[day] && this.trips[day].length > 0; },
+
+            addTrip(day) {
+                if (!this.trips[day]) { this.trips[day] = []; }
+                this.trips[day].push({
+                    day: day,
+                    from: this.route.from,
+                    to: this.route.to,
+                    distance: this.currentDistance,
+                    reason: this.user.reason
+                });
             },
-            isHoliday(day) {
-                return this.currentMonthHolidays[day] || false;
-            },
-            toggleDate(day) {
-                if (this.trips[day] &&
-                    this.trips[day].from === this.route.from &&
-                    this.trips[day].to === this.route.to) {
-                    delete this.trips[day];
-                } else {
-                    this.trips[day] = {
-                        from: this.route.from,
-                        to: this.route.to,
-                        distance: this.currentDistance,
-                        reason: this.user.reason
-                    };
+
+            removeTrip(day, index) {
+                if (this.trips[day]) {
+                    this.trips[day].splice(index, 1);
+                    if (this.trips[day].length === 0) { delete this.trips[day]; }
                 }
             },
+
+            swapLocations() {
+                if (this.departureLocations.includes(this.route.to)) {
+                    const temp = this.route.from;
+                    this.route.from = this.route.to;
+                    this.route.to = temp;
+                } else {
+                    alert("Cannot swap: Destination is not in the allowed Departure list.");
+                }
+            },
+
             async generatePDF() {
                 try {
                     const existingPdfBytes = await fetch('mileageform.pdf').then(res => res.arrayBuffer());
-                    const pdfDoc = await PDFDocument.load(existingPdfBytes);
-                    const form = pdfDoc.getForm();
 
-                    const fields = form.getFields();
-                    const allFieldNames = fields.map(f => f.getName());
-                    console.log("PDF FIELDS FOUND:", allFieldNames);
+                    const activeDays = Object.keys(this.trips).map(Number).sort((a, b) => a - b);
+                    let flatTrips = [];
+                    activeDays.forEach(day => { flatTrips.push(...this.trips[day]); });
 
-                    const findField = (search) => {
-                        return allFieldNames.find(n =>
-                            n.toLowerCase().replace(/\s/g, '').includes(search.toLowerCase().replace(/\s/g, ''))
-                        );
-                    };
+                    const chunkSize = 24;
+                    const chunks = [];
+                    for (let i = 0; i < flatTrips.length; i += chunkSize) {
+                        chunks.push(flatTrips.slice(i, i + chunkSize));
+                    }
+                    if (chunks.length === 0) chunks.push([]);
 
-                    // 1. Header Fields
-                    try { form.getTextField('NAME').setText(this.user.name); } catch(e){}
-                    try { form.getTextField('BUILDING').setText(this.user.building); } catch(e){}
-                    try { form.getTextField('MONTH').setText(this.months[this.config.month]); } catch(e){}
-                    try { form.getTextField('YEAR').setText(this.config.year.toString()); } catch(e){}
+                    for (let i = 0; i < chunks.length; i++) {
+                        const tripChunk = chunks[i];
+                        const pageNum = i + 1;
 
-                    // 2. Rows
-                    const sortedDays = Object.keys(this.trips).map(Number).sort((a, b) => a - b);
+                        const pdfDoc = await PDFDocument.load(existingPdfBytes);
+                        const form = pdfDoc.getForm();
 
-                    sortedDays.slice(0, 24).forEach((day, index) => {
-                        const row = index + 1;
-                        const trip = this.trips[day];
-                        const dateStr = `${this.config.month + 1}/${day}/${this.config.year}`;
+                        const fields = form.getFields();
+                        const allFieldNames = fields.map(f => f.getName());
+                        const findField = (search) => {
+                            return allFieldNames.find(n =>
+                                n.toLowerCase().replace(/\s/g, '').includes(search.toLowerCase().replace(/\s/g, ''))
+                            );
+                        };
+
+                        try { form.getTextField('NAME').setText(this.user.name); } catch(e){}
+                        try { form.getTextField('BUILDING').setText(this.user.building); } catch(e){}
+                        try { form.getTextField('MONTH').setText(this.months[this.config.month]); } catch(e){}
+                        try { form.getTextField('YEAR').setText(this.config.year.toString()); } catch(e){}
+
+                        tripChunk.forEach((trip, index) => {
+                            const row = index + 1;
+                            const dateStr = `${this.config.month + 1}/${trip.day}/${this.config.year}`;
+                            try {
+                                const dateField = findField(`DateRow${row}`) || findField(`Date_Row${row}`);
+                                if (dateField) form.getTextField(dateField).setText(dateStr);
+
+                                const fromField = findField(`FromRow${row}`) || findField(`From_Row${row}`);
+                                if (fromField) form.getTextField(fromField).setText(trip.from);
+
+                                const toField = findField(`ToRow${row}`) || findField(`To_Row${row}`);
+                                if (toField) form.getTextField(toField).setText(trip.to);
+
+                                const milesField = findField(`MilesRow${row}`) || findField(`Miles_Row${row}`) || findField(`TenthsRow${row}`) || findField(`Miles In TenthsRow${row}`);
+                                if (milesField) form.getTextField(milesField).setText(trip.distance.toString());
+
+                                const purposeField = findField(`PurposeRow${row}`) || findField(`Purpose_Row${row}`) || findField(`DetailsRow${row}`) || findField(`PURPOSE  GIVE DETAILSRow${row}`);
+                                if (purposeField) form.getTextField(purposeField).setText(trip.reason);
+                            } catch (e) {}
+                        });
 
                         try {
-                            const dateField = findField(`DateRow${row}`) || findField(`Date_Row${row}`);
-                            if (dateField) form.getTextField(dateField).setText(dateStr);
+                            const pageMiles = tripChunk.reduce((acc, t) => acc + t.distance, 0);
+                            const pageDollars = (pageMiles * this.config.rate).toFixed(2);
 
-                            const fromField = findField(`FromRow${row}`) || findField(`From_Row${row}`);
-                            if (fromField) form.getTextField(fromField).setText(trip.from);
+                            const totalMilesField = findField('TotalMiles') || findField('MilesTotal') || findField('Total_Miles') || findField('TOTAL_MILES');
+                            if (totalMilesField) form.getTextField(totalMilesField).setText(pageMiles.toFixed(1));
 
-                            const toField = findField(`ToRow${row}`) || findField(`To_Row${row}`);
-                            if (toField) form.getTextField(toField).setText(trip.to);
+                            const rateField = findField('Rate') || findField('IRSRate');
+                            if (rateField) form.getTextField(rateField).setText(this.config.rate.toString());
 
-                            const milesField = findField(`MilesRow${row}`) || findField(`Miles_Row${row}`) || findField(`TenthsRow${row}`) || findField(`Miles In TenthsRow${row}`);
-                            if (milesField) form.getTextField(milesField).setText(trip.distance.toString());
-
-                            const purposeField = findField(`PurposeRow${row}`) || findField(`Purpose_Row${row}`) || findField(`DetailsRow${row}`) || findField(`PURPOSE  GIVE DETAILSRow${row}`);
-                            if (purposeField) form.getTextField(purposeField).setText(trip.reason);
-
-                        } catch (e) { console.warn(`Row ${row} error:`, e); }
-                    });
-
-                    // 3. Totals Area
-                    try {
-                        const totalMilesField = findField('TotalMiles') || findField('MilesTotal') || findField('Total_Miles') || findField('TOTAL_MILES');
-                        if (totalMilesField) form.getTextField(totalMilesField).setText(this.totalMiles.toFixed(1));
-
-                        const rateField = findField('Rate') || findField('IRSRate');
-                        if (rateField) form.getTextField(rateField).setText(this.config.rate.toString());
-
-                        const totalDollars = (this.totalMiles * this.config.rate).toFixed(2);
-                        const totalExpenseField = findField('TotalExpenses') || findField('Expenses') || findField('TotalAmount') || findField('TOTAL_EXPENSES');
-
-                        if (totalExpenseField) {
-                            const field = form.getTextField(totalExpenseField);
-                            field.setText(`$${totalDollars}`);
-                            if (totalDollars.length > 6) {
-                                field.setFontSize(8);
+                            const totalExpenseField = findField('TotalExpenses') || findField('Expenses') || findField('TotalAmount') || findField('TOTAL_EXPENSES');
+                            if (totalExpenseField) {
+                                const field = form.getTextField(totalExpenseField);
+                                field.setText(`$${pageDollars}`);
+                                if (pageDollars.length > 6) field.setFontSize(8);
                             }
-                        }
+                        } catch(e) {}
 
-                    } catch(e) { console.warn("Totals error:", e); }
+                        const pdfBytes = await pdfDoc.save();
+                        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
 
-                    // 4. Download
-                    const pdfBytes = await pdfDoc.save();
-                    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = `Mileage_${this.months[this.config.month]}.pdf`;
-                    link.click();
+                        const suffix = chunks.length > 1 ? `_Page${pageNum}` : '';
+                        link.download = `Mileage_${this.months[this.config.month]}${suffix}.pdf`;
+
+                        link.click();
+
+                        await new Promise(r => setTimeout(r, 500));
+                    }
+
                 } catch (e) {
                     alert("Error! Check console for details.");
                     console.error(e);
